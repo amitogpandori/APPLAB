@@ -1,0 +1,30 @@
+name: AppLab Source Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require application source
+        run: |
+          test -f package.json || (echo "AppLab source files are not uploaded yet" && exit 1)
+          test -f main.js
+          test -f preload.js
+          test -f index.html
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Check JavaScript syntax
+        run: |
+          for file in *.js; do node --check "$file"; done
+      - name: Run unit tests
+        run: npm test
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        run: npm run dist:win
